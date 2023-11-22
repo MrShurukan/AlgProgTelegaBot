@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -88,9 +91,26 @@ func scheduleTomorrowHandler(ctx context.Context, b *bot.Bot, update *models.Upd
 }
 
 func scheduleOnHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	response, err := http.Get("http://localhost:3000/scheduleByDay?day=1")
+	defer response.Body.Close()
+
+	if err != nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "Произошла ошибка: " + err.Error(),
+		})
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
-		Text:   "Команда ещё не реализована",
+		Text:   "Получил расписание: " + bodyString,
 	})
 }
 
